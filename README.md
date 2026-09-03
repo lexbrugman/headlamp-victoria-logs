@@ -84,13 +84,12 @@ pages above.
 
 ## Development
 
-Everything runs in a container; no toolchain on the host:
-
-```sh
-podman run --rm -v "$PWD:/app:z" -w /app node:22-bookworm-slim \
-    sh -c 'npm ci && npm run tsc && npm run lint && npm test'
+```
+npm ci
+npm run tsc && npm run lint && npm test
 ```
 
-The query builders in `src/query.ts` are pure functions and carry the tests. The
+The query builders in `src/query.ts` are pure functions and carry the tests; the
 component around them is a form and a link, so the part that can break quietly
-is the part under test.
+is the part under test. The Node release the image builds against is pinned in
+the [Dockerfile](Dockerfile).
