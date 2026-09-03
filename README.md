@@ -16,10 +16,14 @@ the workload above them, which outlives its pods.
 
 | Page | Query |
 | --- | --- |
-| Deployment, StatefulSet, DaemonSet, CronJob | `namespace:<ns> workload:<name>` |
-| Job | `namespace:<ns> job_name:<name>` |
-| ReplicaSet | `namespace:<ns> pod:<name>-*` |
-| Node | `source:"talos" node:<name>` |
+| Deployment, StatefulSet, DaemonSet, CronJob | `namespace:=<ns> workload:=<name>` |
+| Job | `namespace:=<ns> job_name:=<name>` |
+| ReplicaSet | `namespace:=<ns> pod:=<name>-*` |
+| Node | `source:="talos" node:=<name>` |
+
+The terms are exact (`:=`) rather than LogsQL's default word match, which
+treats a hyphen as a separator — under that, a filter for `cambase` also
+returns `cambase-admin` and `cambase-home`.
 
 A CronJob's page covers every execution, because the collector resolves each
 one back to the schedule that created it. A Job's page covers only itself, for

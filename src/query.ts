@@ -36,13 +36,23 @@ export function quote(value: string): string {
 }
 
 /**
+ * A term matching a field's whole value. LogsQL's plain `field:value` matches
+ * by word and treats a hyphen as a separator, so `workload:"cambase"` also
+ * matches `cambase-admin` and `cambase-home` — sibling workloads whose logs
+ * must not be mixed into one another's. `:=` compares the value entire.
+ */
+export function exact(field: string, value: string): string {
+  return `${field}:=${quote(value)}`;
+}
+
+/**
  * The filter for one workload's logs, across every pod that has ever served
  * it. `workload` is the collector's own field, resolved at ingestion from the
  * pod's owner reference, so this matches incarnations that no longer exist —
  * which is the whole reason to look here rather than at the pod log endpoint.
  */
 export function workloadFilter(namespace: string, workload: string): string {
-  return `namespace:${quote(namespace)} workload:${quote(workload)}`;
+  return `${exact('namespace', namespace)} ${exact('workload', workload)}`;
 }
 
 /**
@@ -52,7 +62,7 @@ export function workloadFilter(namespace: string, workload: string): string {
  * pods either way, whether a schedule created them or a person did.
  */
 export function jobFilter(namespace: string, job: string): string {
-  return `namespace:${quote(namespace)} job_name:${quote(job)}`;
+  return `${exact('namespace', namespace)} ${exact('job_name', job)}`;
 }
 
 /**
@@ -62,7 +72,7 @@ export function jobFilter(namespace: string, job: string): string {
  * rollout from another.
  */
 export function replicaSetFilter(namespace: string, replicaSet: string): string {
-  return `namespace:${quote(namespace)} pod:${quote(`${replicaSet}-`)}*`;
+  return `${exact('namespace', namespace)} pod:=${quote(`${replicaSet}-`)}*`;
 }
 
 /**
@@ -71,7 +81,7 @@ export function replicaSetFilter(namespace: string, replicaSet: string): string 
  * streams rather than everything that ran on the box.
  */
 export function nodeFilter(node: string): string {
-  return `source:${quote('talos')} node:${quote(node)}`;
+  return `${exact('source', 'talos')} ${exact('node', node)}`;
 }
 
 /**
