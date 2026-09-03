@@ -84,12 +84,15 @@ pages above.
 
 ## Development
 
+The build stage of the [Dockerfile](Dockerfile) is the toolchain, so a checkout
+needs no Node of its own and the pinned version is stated in one place:
+
 ```
-npm ci
-npm run tsc && npm run lint && npm test
+podman build --target build -t headlamp-victoria-logs-dev .
+podman run --rm -v "$PWD:/src:z" headlamp-victoria-logs-dev \
+    sh -c 'npm ci && npm run tsc && npm run lint && npm test'
 ```
 
 The query builders in `src/query.ts` are pure functions and carry the tests; the
 component around them is a form and a link, so the part that can break quietly
-is the part under test. The Node release the image builds against is pinned in
-the [Dockerfile](Dockerfile).
+is the part under test.
