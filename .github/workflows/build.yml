@@ -110,6 +110,11 @@ jobs:
       - name: Set the version
         run: npm version "${{ needs.version.outputs.version }}" --no-git-tag-version
 
+      # The packager archives a built bundle rather than producing one, so the
+      # build runs first or it finds nothing to package.
+      - name: Build
+        run: npm run build
+
       - name: Package
         run: npm run package
 
