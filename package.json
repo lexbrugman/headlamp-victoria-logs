@@ -1,6 +1,6 @@
 {
   "name": "headlamp-victoria-logs",
-  "version": "0.1.0",
+  "version": "2026.903.0",
   "description": "Persistent workload logs in Headlamp, served from VictoriaLogs",
   "scripts": {
     "start": "headlamp-plugin start",
