@@ -46,6 +46,16 @@ export function workloadFilter(namespace: string, workload: string): string {
 }
 
 /**
+ * The filter for one replica set's logs. The collector resolves a pod's owner
+ * chain up to the deployment, so no field names the replica set itself — but
+ * its pods are named after it, which is enough to tell one generation of a
+ * rollout from another.
+ */
+export function replicaSetFilter(namespace: string, replicaSet: string): string {
+  return `namespace:${quote(namespace)} pod:${quote(`${replicaSet}-`)}*`;
+}
+
+/**
  * The filter for one node's own logs. Container logs carry `node` too, so the
  * source discriminator is what keeps this to Talos' service and kernel
  * streams rather than everything that ran on the box.

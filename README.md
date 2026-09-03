@@ -17,7 +17,12 @@ the workload above them, which outlives its pods.
 | Page | Query |
 | --- | --- |
 | Deployment, StatefulSet, DaemonSet, Job, CronJob | `namespace:<ns> workload:<name>` |
+| ReplicaSet | `namespace:<ns> pod:<name>-*` |
 | Node | `source:"talos" node:<name>` |
+
+A ReplicaSet narrows to the pods it created rather than reporting its
+Deployment's whole history, which is what makes one generation of a rollout
+comparable with the one it replaced.
 
 A CronJob's page covers every execution, not the surviving one, because the
 collector resolves each execution back to the CronJob that scheduled it.

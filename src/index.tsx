@@ -3,7 +3,15 @@ import { K8s, registerDetailsViewSection } from '@kinvolk/headlamp-plugin/lib';
 import { SectionBox } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import { Box, Button, MenuItem, TextField, Typography } from '@mui/material';
 import { useState } from 'react';
-import { DEFAULT_RANGE, nodeFilter, Range, RANGES, vmuiUrl, workloadFilter } from './query';
+import {
+  DEFAULT_RANGE,
+  nodeFilter,
+  Range,
+  RANGES,
+  replicaSetFilter,
+  vmuiUrl,
+  workloadFilter,
+} from './query';
 
 /**
  * Kinds whose pods come and go while the thing itself persists. Headlamp's
@@ -22,9 +30,17 @@ function filterFor(resource: any): string | null {
   if (kind === 'Node') {
     return nodeFilter(name);
   }
+  const namespace: string | undefined = resource?.metadata?.namespace;
+  if (!namespace) {
+    return null;
+  }
+  // A replica set is one generation of a deployment, so it narrows to its own
+  // pods rather than reporting the deployment's whole history.
+  if (kind === 'ReplicaSet') {
+    return replicaSetFilter(namespace, name);
+  }
   if (WORKLOAD_KINDS.includes(kind)) {
-    const namespace: string | undefined = resource?.metadata?.namespace;
-    return namespace ? workloadFilter(namespace, name) : null;
+    return workloadFilter(namespace, name);
   }
   return null;
 }

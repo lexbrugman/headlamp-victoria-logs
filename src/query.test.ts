@@ -1,4 +1,12 @@
-import { DEFAULT_RANGE, nodeFilter, quote, RANGES, vmuiUrl, workloadFilter } from './query';
+import {
+  DEFAULT_RANGE,
+  nodeFilter,
+  quote,
+  RANGES,
+  replicaSetFilter,
+  vmuiUrl,
+  workloadFilter,
+} from './query';
 
 describe('quote', () => {
   it('wraps a plain value', () => {
@@ -20,6 +28,20 @@ describe('workloadFilter', () => {
   // so one filter covers every run rather than one pod.
   it('does not name a pod', () => {
     expect(workloadFilter('apps', 'cambase-admin')).not.toContain('pod');
+  });
+});
+
+describe('replicaSetFilter', () => {
+  it('matches the pods named after the replica set', () => {
+    expect(replicaSetFilter('apps', 'siteapp-74bbfb5f4c')).toBe(
+      'namespace:"apps" pod:"siteapp-74bbfb5f4c-"*'
+    );
+  });
+
+  // The wildcard has to sit outside the literal, or it is matched as a
+  // character rather than read as a prefix.
+  it('keeps the wildcard out of the quoted value', () => {
+    expect(replicaSetFilter('apps', 'siteapp-74bbfb5f4c')).toMatch(/pod:"[^"]+"\*$/);
   });
 });
 
