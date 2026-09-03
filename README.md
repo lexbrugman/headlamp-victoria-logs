@@ -16,16 +16,19 @@ the workload above them, which outlives its pods.
 
 | Page | Query |
 | --- | --- |
-| Deployment, StatefulSet, DaemonSet, Job, CronJob | `namespace:<ns> workload:<name>` |
+| Deployment, StatefulSet, DaemonSet, CronJob | `namespace:<ns> workload:<name>` |
+| Job | `namespace:<ns> job_name:<name>` |
 | ReplicaSet | `namespace:<ns> pod:<name>-*` |
 | Node | `source:"talos" node:<name>` |
+
+A CronJob's page covers every execution, because the collector resolves each
+one back to the schedule that created it. A Job's page covers only itself, for
+the same reason — its workload field names the schedule, so the job name is
+what distinguishes one run.
 
 A ReplicaSet narrows to the pods it created rather than reporting its
 Deployment's whole history, which is what makes one generation of a rollout
 comparable with the one it replaced.
-
-A CronJob's page covers every execution, not the surviving one, because the
-collector resolves each execution back to the CronJob that scheduled it.
 
 ## The log schema (published interface)
 
@@ -37,6 +40,8 @@ nothing:
 | --- | --- |
 | `namespace` | the workload's namespace |
 | `workload` | the workload's own name — **not** the pod's, and stable across pod incarnations |
+| `pod` | the pod that wrote the record |
+| `job_name` | the job a record came from, where one did |
 | `node` | the node the record came from |
 | `source` | `kubernetes` for container logs, `talos` for node logs |
 

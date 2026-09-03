@@ -5,6 +5,7 @@ import { Box, Button, MenuItem, TextField, Typography } from '@mui/material';
 import { useState } from 'react';
 import {
   DEFAULT_RANGE,
+  jobFilter,
   nodeFilter,
   Range,
   RANGES,
@@ -18,7 +19,7 @@ import {
  * own log view reads the kubelet, so it can only show pods that still exist;
  * these are the pages where that difference is felt.
  */
-const WORKLOAD_KINDS = ['Deployment', 'StatefulSet', 'DaemonSet', 'Job', 'CronJob'];
+const WORKLOAD_KINDS = ['Deployment', 'StatefulSet', 'DaemonSet', 'CronJob'];
 
 /** The filter for a resource, or null where this plugin has nothing to add. */
 function filterFor(resource: any): string | null {
@@ -38,6 +39,9 @@ function filterFor(resource: any): string | null {
   // pods rather than reporting the deployment's whole history.
   if (kind === 'ReplicaSet') {
     return replicaSetFilter(namespace, name);
+  }
+  if (kind === 'Job') {
+    return jobFilter(namespace, name);
   }
   if (WORKLOAD_KINDS.includes(kind)) {
     return workloadFilter(namespace, name);

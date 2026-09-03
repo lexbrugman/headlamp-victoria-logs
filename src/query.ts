@@ -46,6 +46,16 @@ export function workloadFilter(namespace: string, workload: string): string {
 }
 
 /**
+ * The filter for one job's logs — its own execution, not the schedule it came
+ * from. A job created by a cron job reports the cron job as its workload, so
+ * that field would name the wrong thing here; the job name is on every job's
+ * pods either way, whether a schedule created them or a person did.
+ */
+export function jobFilter(namespace: string, job: string): string {
+  return `namespace:${quote(namespace)} job_name:${quote(job)}`;
+}
+
+/**
  * The filter for one replica set's logs. The collector resolves a pod's owner
  * chain up to the deployment, so no field names the replica set itself — but
  * its pods are named after it, which is enough to tell one generation of a

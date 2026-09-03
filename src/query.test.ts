@@ -1,5 +1,6 @@
 import {
   DEFAULT_RANGE,
+  jobFilter,
   nodeFilter,
   quote,
   RANGES,
@@ -28,6 +29,17 @@ describe('workloadFilter', () => {
   // so one filter covers every run rather than one pod.
   it('does not name a pod', () => {
     expect(workloadFilter('apps', 'cambase-admin')).not.toContain('pod');
+  });
+});
+
+describe('jobFilter', () => {
+  // A cron job's execution reports the cron job as its workload, so filtering
+  // on that field would return every run rather than this one.
+  it('matches one execution rather than its schedule', () => {
+    expect(jobFilter('apps', 'nightly-29797794')).toBe(
+      'namespace:"apps" job_name:"nightly-29797794"'
+    );
+    expect(jobFilter('apps', 'nightly-29797794')).not.toContain('workload');
   });
 });
 
