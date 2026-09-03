@@ -64,23 +64,20 @@ The namespace and service VictoriaLogs answers on are constants at the top of
 [`src/query.ts`](src/query.ts). A deployment that puts it elsewhere changes those
 two lines.
 
-## Deploying
+## Installing
 
-Headlamp loads plugins from a directory. The image built here carries one and
-copies it into place, which suits an init container sharing a volume with
-Headlamp:
+Releases are published to Artifact Hub, so Headlamp's plugin manager installs
+this the same way it installs any other plugin:
 
 ```yaml
-initContainers:
-  - name: victoria-logs-plugin
-    image: ghcr.io/lexbrugman/headlamp-victoria-logs:<version>
-    volumeMounts:
-      - name: plugins
-        mountPath: /headlamp/plugins
+plugins:
+  - name: headlamp_victoria_logs
+    source: https://artifacthub.io/packages/headlamp/<repository>/headlamp_victoria_logs
+    version: <version>
 ```
 
-Mount the same volume into Headlamp at its `pluginsDir` and it appears on the
-pages above.
+The installer verifies the archive against the checksum published with each
+version.
 
 ## Development
 

@@ -1,0 +1,4 @@
+# Ties this directory to the Artifact Hub repository of the same ID, which is
+# how the catalog knows the published plugin comes from here rather than from
+# anyone who copies the metadata beside it.
+repositoryID: 365d6d04-489c-47db-aebb-4624fcff5d11
