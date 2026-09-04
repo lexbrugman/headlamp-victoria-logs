@@ -74,9 +74,9 @@ ever parse it.
 
 ## Configuration
 
-The namespace and service VictoriaLogs answers on are constants at the top of
-[`src/query.ts`](src/query.ts). A deployment that puts it elsewhere changes those
-two lines.
+The namespace and service VictoriaLogs answers on are the `SERVICE_NAMESPACE`
+and `SERVICE_PORT` constants in [`src/query.ts`](src/query.ts). A deployment
+that puts it elsewhere changes those two lines.
 
 ## Installing
 
@@ -86,7 +86,7 @@ this the same way it installs any other plugin:
 ```yaml
 plugins:
   - name: headlamp_victoria_logs
-    source: https://artifacthub.io/packages/headlamp/<repository>/headlamp_victoria_logs
+    source: https://artifacthub.io/packages/headlamp/headlamp-victoria-logs/headlamp_victoria_logs
     version: <version>
 ```
 
@@ -95,11 +95,11 @@ version.
 
 ## Development
 
-The build stage of the [Dockerfile](Dockerfile) is the toolchain, so a checkout
-needs no Node of its own and the pinned version is stated in one place:
+The [Dockerfile](Dockerfile) is the toolchain, so a checkout needs no Node of
+its own and the pinned version is stated in one place:
 
 ```
-podman build --target build -t headlamp-victoria-logs-dev .
+podman build -t headlamp-victoria-logs-dev .
 podman run --rm -v "$PWD:/src:z" headlamp-victoria-logs-dev \
     sh -c 'npm ci && npm run tsc && npm run lint && npm test'
 ```
