@@ -14,46 +14,120 @@ the workload above them, which outlives its pods.
 
 ## Where it attaches
 
-| Page | Query |
-| --- | --- |
-| Deployment, StatefulSet, DaemonSet, CronJob | `namespace:=<ns> workload:=<name>` |
-| Job | `namespace:=<ns> job_name:=<name>` |
-| ReplicaSet | `namespace:=<ns> pod:=<name>-*` |
-| Node | `source:="talos" node:=<name>` |
+Deployment, StatefulSet, DaemonSet and CronJob pages get the workload's whole
+history. A Job page gets that execution alone; a ReplicaSet page gets the pods
+that one generation created, which is what makes two sides of a rollout
+comparable. A Node page gets the node's own records, where the store keeps them
+apart from the containers that ran on it.
 
-The terms are exact (`:=`) rather than LogsQL's default word match, which
-treats a hyphen as a separator — under that, a filter for `cambase` also
-returns `cambase-admin` and `cambase-home`.
+## How it matches
 
-A CronJob's page covers every execution, because the collector resolves each
-one back to the schedule that created it. A Job's page covers only itself, for
-the same reason — its workload field names the schedule, so the job name is
-what distinguishes one run.
+Nothing has to be configured for this to work, and nothing needs to be
+configured to make it better either. On first use against a cluster the plugin
+asks VictoriaLogs what it holds, and identifies workloads in one of two ways
+depending on the answer. **The section states which one it used**, because an
+empty result means something different under each.
 
-A ReplicaSet narrows to the pods it created rather than reporting its
-Deployment's whole history, which is what makes one generation of a rollout
-comparable with the one it replaced.
+### A recorded `workload` field
 
-## The log schema (published interface)
+The precise route. Each record already names the workload it belongs to, so a
+query is an exact term and nothing is inferred:
 
-This plugin builds queries; it does not ingest anything. Whatever ships logs
-into VictoriaLogs must label them with these fields, or the queries match
-nothing:
+```
+namespace:="apps" workload:="hesk"
+```
 
-| Field | Meaning |
-| --- | --- |
-| `namespace` | the workload's namespace |
-| `workload` | the workload's own name — **not** the pod's, and stable across pod incarnations |
-| `pod` | the pod that wrote the record |
-| `job_name` | the job a record came from, where one did |
-| `node` | the node the record came from |
-| `source` | `kubernetes` for container logs, `talos` for node logs |
+Terms are exact (`:=`) rather than LogsQL's default word match, which treats a
+hyphen as a separator — under that, a filter for `cambase` also returns
+`cambase-admin` and `cambase-home`.
 
-`workload` is the load-bearing one. A collector that records only the pod name
-cannot answer "show me this Deployment's logs", because the pod that wrote them
-is usually gone. Deriving it at ingestion — from the pod's owner reference, and
-from an explicit label where the owner chain does not reach far enough — is what
-makes the history queryable.
+### Generated pod names
+
+The fallback, used when no such field is recorded. Kubernetes names a pod after
+the thing that created it, so the pod name can be matched against the shape its
+kind produces:
+
+```
+namespace:="apps" pod:~"^hesk-[bcdfghjklmnpqrstvwxz2456789]{5,10}-[bcdfghjklmnpqrstvwxz2456789]{5}$"
+```
+
+That alphabet is not decoration. Kubernetes draws generated suffixes from a
+vowel-free set, so a sibling called `cambase-admin` cannot be read as `cambase`
+plus a suffix — `admin` is not a string the generator can produce. Together with
+the anchors, that keeps a workload's pods apart from those of a longer-named
+neighbour.
+
+What differs between the two:
+
+| | `workload` field | generated pod names |
+| --- | --- | --- |
+| Deployment, StatefulSet, DaemonSet | yes | yes |
+| CronJob, across every execution | yes | yes |
+| Job, ReplicaSet | yes | yes |
+| Pods named outside the usual pattern | yes | no |
+| Controllers the plugin has never heard of | yes | no |
+| Asks anything of your collector | yes | no |
+
+The last three rows are the reason to record the field. Pod-name shapes are a
+convention, not a guarantee: a long workload name gets truncated when the
+generated name is built, a custom controller may name pods however it likes, and
+either way the fallback returns nothing while looking exactly like a workload
+that has simply been quiet.
+
+### Neither
+
+A store recording neither `pod` nor `workload` holds nothing these queries can
+be built from — its collector labels records some other way entirely. The
+section then says so instead of naming a way of matching that would return
+nothing, and offers no link, since the view behind it would be empty by
+construction.
+
+## Recording a workload field
+
+The plugin builds queries; it ingests nothing. To take the precise route, ship
+logs with these fields — `workload` is the one that matters, the rest sharpen
+particular pages:
+
+| Field | Meaning | Used for |
+| --- | --- | --- |
+| `namespace` | the workload's namespace | every query |
+| `workload` | the workload's own name — **not** the pod's, and stable across pod incarnations | the precise route |
+| `pod` | the pod that wrote the record | the fallback, and ReplicaSet pages |
+| `job_name` | the job a record came from, where one did | telling one execution from its schedule |
+| `node` | the node the record came from | Node pages |
+| `source` | what produced the record, e.g. `kubernetes` for containers | separating node logs from container logs |
+
+Resolve `workload` at ingestion from the pod's owner reference, walking up to
+the controller that owns it: a ReplicaSet's Deployment, a Job's CronJob. Doing
+it there rather than at query time is what makes the history answerable, because
+the pod that wrote a record is usually gone by the time anyone asks. Where the
+owner chain does not reach far enough, an explicit label on the pod is the
+escape hatch — the fallback has no equivalent, which is why an unusual
+controller is the case it cannot serve.
+
+Node logs need `source` for a different reason, described next.
+
+## Node logs
+
+A node's own logs and the logs of the containers that ran on it both carry
+`node`, so something has to tell them apart. That something is `source` — but
+which of its values means "the machine itself" is the collector's choice, so
+the plugin works it out rather than assuming a name.
+
+It compares how often each source's records name a pod. Container logs name one
+every time; machine logs essentially never do, so the source that hardly ever
+does is the machine one. Whatever it happens to be called — `talos`, `journald`,
+`systemd` — Node pages work without configuration, and they work under either of
+the two ways of matching above, because nothing in this reads `workload`.
+
+The comparison is deliberately made per source rather than per record. A node
+runs components that log *about* pods — the kubelet reports on containers by
+name — so a handful of genuine machine records do carry a pod. Excluding records
+individually would drop exactly those lines from a node's history; classifying
+the source keeps them.
+
+Where no single source stands out — none look like machine logs, or several do —
+Node pages are left out rather than answered with a guess.
 
 ## Access model
 
@@ -74,9 +148,14 @@ ever parse it.
 
 ## Configuration
 
-The namespace and service VictoriaLogs answers on are the `SERVICE_NAMESPACE`
-and `SERVICE_PORT` constants in [`src/query.ts`](src/query.ts). A deployment
-that puts it elsewhere changes those two lines.
+None. VictoriaLogs is found by looking for a service exposing port `9428`,
+whatever it is called and wherever it lives, since the name and the namespace
+belong to whoever deployed it.
+
+Two cases fall back to `logging/victoria-logs`: more than one service exposes
+that port, so there is no way to tell which was meant; or the viewer is not
+allowed to list services, which is more than a details page otherwise needs and
+so may well be denied.
 
 ## Installing
 
