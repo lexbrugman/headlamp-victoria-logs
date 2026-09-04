@@ -1,0 +1,11 @@
+version: 2026.904.1
+name: headlamp_victoria_logs
+displayName: VictoriaLogs
+createdAt: "2026-09-04T18:26:47Z"
+description: Persistent workload logs in Headlamp, served from VictoriaLogs
+homeURL: https://github.com/lexbrugman/headlamp-victoria-logs
+annotations:
+  headlamp/plugin/archive-url: https://github.com/lexbrugman/headlamp-victoria-logs/releases/download/2026.904.1/headlamp-victoria-logs-2026.904.1.tar.gz
+  headlamp/plugin/archive-checksum: c2e161b1c3185820941586f37ad54de52013510687bbc9fc71ce14c18ba7474d
+  headlamp/plugin/version-compat: ">=0.22"
+  headlamp/plugin/distro-compat: in-cluster,web,docker-desktop,desktop
